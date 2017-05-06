@@ -54,3 +54,7 @@ INSPECTION TYPE - Inspection.type
 
 ### SQL statement for the top 10 Thai restaurants.
 TODO
+
+# Web Application
+## Deploying to Heroku
+- Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
