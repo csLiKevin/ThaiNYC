@@ -7,8 +7,8 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 # Solution
 ## ETL Schema justification
 ### Restaurant
-- `registration_number` (required) - Each restaurant gets a unique registration number assigned to them by the city.
-- `name` (required) - All restaurants should have a name that they display on their storefront.
+- `registration_number` - Each restaurant gets a unique registration number assigned to them by the city.
+- `name` - All restaurants should have a name that they display on their storefront.
 - Address - The physical location of the establishment.
     - `street_address`
     - `borough`
@@ -17,8 +17,10 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 - `cuisine` - Indicates the type of food the restaurant serve.
 
 ### Inspection
-- `type` - The type of inspection that was performed.
+- `restaurant` - The restaurant this inspection belongs to.
+- `check_type` - The type of inspection that was performed.
 - `grade` - The letter rating the Department of Health assigned during the inspection.
+- `grade_date` - The date the grade was assigned.
 - `score` - A number representing how many health violations a restaurant has.
 - `date` - The date the inspection was conducted.
 - `violation_code` - Code representing the violation type.
@@ -29,6 +31,12 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 ## Mapping the result set to the ETL Schemas.
 - The `BUILDING` and `STREET` columsn will get combined into a single `street_address` column in the `Restaurant` table.
 - The `RECORD DATE` column is not mapped because it is the date the data was entered into NYC Open Data's database and not related to any restaurant or inspection.
+- The `GRADE` column is used even though the grade can usually be derived from the `SCORE` column, not every restaurant has been assigned a grade.
+    ```
+    A - < 14 violations
+    B - < 28 violations
+    C - >= 28 violations
+    ```
 ```
 CAMIS -> Restaurant.registration_number
 DBA -> Restaurant.name
@@ -49,7 +57,7 @@ SCORE - Inspection.score
 GRADE - Inspection.grade
 GRADE DATE - Inspection.date
 RECORD DATE - NOT USED
-INSPECTION TYPE - Inspection.type
+INSPECTION TYPE - Inspection.check_type
 ```
 
 ### SQL statement for the top 10 Thai restaurants.
@@ -58,3 +66,8 @@ TODO
 # Web Application
 ## Deploying to Heroku
 - Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
+- `heroku create`
+- `git push heroku master`
+
+# TODO
+- Run through the [Django production checklist](https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/).

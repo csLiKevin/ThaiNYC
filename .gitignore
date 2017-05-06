@@ -1,4 +1,5 @@
-/virtualenv/
 *.pyc
-staticfiles
+*.sqlite3
 .env
+/staticfiles/
+/virtualenv/
