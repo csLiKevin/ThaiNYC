@@ -16,7 +16,15 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 
 ## SQL statement for the top 10 Thai restaurants.
 
-TODO
+```mysql
+SELECT "restaurants_restaurant"."borough", "restaurants_restaurant"."name", "restaurants_restaurant"."phone_number", "restaurants_restaurant"."registration_number", "restaurants_restaurant"."street_address", "restaurants_restaurant"."zip_code"
+FROM "restaurants_restaurant"
+INNER JOIN "restaurants_grade" ON ("restaurants_restaurant"."id" = "restaurants_grade"."restaurant_id")
+LEFT OUTER JOIN "restaurants_inspection" ON ("restaurants_restaurant"."id" = "restaurants_inspection"."restaurant_id")
+WHERE ("restaurants_restaurant"."cuisine" = Thai AND "restaurants_grade"."score" <= 2)
+ORDER BY "restaurants_grade"."score" ASC, "restaurants_inspection"."score" ASC
+LIMIT 10
+```
 
 ## ETL Schema justification
 

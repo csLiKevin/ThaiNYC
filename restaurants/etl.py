@@ -171,6 +171,6 @@ def run():
                 load_grade_data(restaurant, grade_data) if valid_grade else None
                 print line_number, "Valid", restaurant.registration_number, restaurant.name
             else:
-                print line_number, "Invalid", restaurant.registration_number, restaurant.name
+                print line_number, "Invalid", restaurant_data["registration_number"], restaurant_data["name"]
             # Setup.
             line_number += 1
