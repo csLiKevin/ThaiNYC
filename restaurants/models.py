@@ -25,7 +25,7 @@ class Restaurants(Model):
     borough = CharField(max_length=13, choices=BOROUGHS)
     cuisine = CharField(max_length=255)
     name = CharField(max_length=255)
-    phone_number = PositiveIntegerField()
+    phone_number = PositiveIntegerField(blank=True, null=True)
     registration_number = PositiveIntegerField(unique=True)
     street_address = CharField(max_length=255)
     zip_code = PositiveSmallIntegerField()
@@ -36,10 +36,14 @@ class Inspection(Model):
     check_type = CharField(max_length=255)
     critical = BooleanField(default=False)
     date = DateField()
-    grade = IntegerField(choices=GRADES)
-    grade_date = DateField()
     restaurant = ForeignKey(to=Restaurants)
-    score = SmallIntegerField()
+    score = SmallIntegerField(blank=True, null=True)
     violation_code = CharField(max_length=3)
     violation_description = CharField(max_length=255)
+
+
+class Grade(Model):
+    date = DateField()
+    restaurant = ForeignKey(to=Restaurants)
+    score = IntegerField(choices=GRADES)
 
