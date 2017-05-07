@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db.models import Model, PositiveIntegerField, CharField, ForeignKey, IntegerField, SmallIntegerField, \
-    PositiveSmallIntegerField, DateField, BooleanField, BigIntegerField
+    PositiveSmallIntegerField, DateField, BooleanField, BigIntegerField, TextField
 
 BOROUGHS = (
     ("bronx", "BRONX"),
@@ -41,7 +41,7 @@ class Inspection(Model):
     restaurant = ForeignKey(to=Restaurant)
     score = SmallIntegerField(blank=True, null=True)
     violation_code = CharField(max_length=3)
-    violation_description = CharField(max_length=255)
+    violation_description = TextField()
 
     def __unicode__(self):
         return "{} {} {}".format(self.restaurant, self.date, self.score)
