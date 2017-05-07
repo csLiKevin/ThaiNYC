@@ -7,6 +7,7 @@ from datetime import datetime
 
 import requests
 
+from restaurants.models import Restaurant, Inspection, Grade
 
 RESULT_SET_URL = "https://nycopendata.socrata.com/api/views/xx67-kt59/rows.csv?accessType=DOWNLOAD"
 
@@ -28,7 +29,7 @@ def extract_restaurant_data(csv_obj):
         "building_number": csv_obj["BUILDING"],
         "cuisine": csv_obj["CUISINE DESCRIPTION"],
         "name": csv_obj["DBA"],
-        "phone": csv_obj["PHONE"],
+        "phone_number": csv_obj["PHONE"],
         "registration_number": csv_obj["CAMIS"],
         "street_name": csv_obj["STREET"],
         "zip_code": csv_obj["ZIPCODE"],
@@ -70,18 +71,21 @@ def transform_restaurant_data(extracted_data):
     :param extracted_data: Object containing restaurant data extracted from a csv row.
     :return: None.
     """
+    if extracted_data["cuisine"] != "Thai" or not extracted_data["name"]:
+        # We only need to store Thai restaurants.
+        raise TransformException("Restaurant does not serve Thai cuisine.")
     building_number = extracted_data.pop("building_number")
     street_name = extracted_data.pop("street_name")
-    extracted_data["street"] = "{} {}".format(building_number, street_name)
+    extracted_data["street_address"] = "{} {}".format(building_number, street_name)
     extracted_data["borough"] = extracted_data["borough"].lower()
     try:
         extracted_data["zip_code"] = int(extracted_data["zip_code"])
     except ValueError:
         raise TransformException("Restaurant data has an invalid zip code.")
     try:
-        extracted_data["phone"] = int(extracted_data["phone"])
+        extracted_data["phone_number"] = int(extracted_data["phone_number"])
     except ValueError:
-        extracted_data["phone"] = None
+        extracted_data["phone_number"] = None
     extracted_data["registration_number"] = int(extracted_data["registration_number"])
 
 
@@ -91,6 +95,8 @@ def transform_inspection_data(extracted_data):
     :param extracted_data: Object containing inspection data extracted from a csv row.
     :return: None.
     """
+    if not extracted_data["check_type"]:
+        raise TransformException("Inspection data is missing: check type.")
     score = extracted_data["score"]
     extracted_data["critical"] = True if extracted_data["critical"] == "Critical" else False
     extracted_data["date"] = datetime.strptime(extracted_data["date"], "%m/%d/%Y")
@@ -115,25 +121,32 @@ def transform_grade_data(extracted_data):
 
 
 def load_restaurant_data(transformed_data):
-    pass
+    restaurant = Restaurant.objects.filter(registration_number=transformed_data["registration_number"]).first()
+    if restaurant:
+        for key, value in transformed_data.iteritems():
+            setattr(restaurant, key, value)
+        restaurant.save()
+        return restaurant
+    else:
+        return Restaurant.objects.create(**transformed_data)
 
 
-def load_inspection_data(transformed_data):
-    pass
+def load_inspection_data(restaurant, transformed_data):
+    return Inspection.objects.create(restaurant=restaurant, **transformed_data)
 
 
-def load_grade_data(transformed_data):
-    pass
+def load_grade_data(restaurant, transformed_data):
+    return Grade.objects.create(restaurant=restaurant, **transformed_data)
 
 
 def run():
     line_number = 1
+    invalid_rows = []
     # The data set is a big csv so we will have to stream it and process the rows one by one.
     with closing(requests.get(RESULT_SET_URL, stream=True)) as response:
         response.encoding = response.encoding or "utf-8"
         csv_obj_lines = DictReader(response.iter_lines())
         for csv_obj in csv_obj_lines:
-            print line_number, csv_obj["CAMIS"], csv_obj
             # Extract.
             restaurant_data = extract_restaurant_data(csv_obj)
             inspection_data = extract_inspection_data(csv_obj)
@@ -153,11 +166,14 @@ def run():
             except TransformException:
                 valid_grade = False
             # Load.
-            load_restaurant_data(restaurant_data)
-            load_inspection_data(inspection_data)
-            load_grade_data(grade_data)
-            # Logging.
+            if valid_restaurant:
+                restaurant = load_restaurant_data(restaurant_data)
+                load_inspection_data(restaurant, inspection_data) if valid_inspection else None
+                load_grade_data(restaurant, grade_data) if valid_grade else None
+                print line_number, "Valid", restaurant.registration_number, restaurant.name
+            else:
+                print line_number, "Invalid", restaurant.registration_number, restaurant.name
+                invalid_rows.append(line_number)
+            # Setup.
             line_number += 1
-
-if __name__ == "__main__":
-    run()
+    print "Invalid Rows: {}".format(invalid_rows)

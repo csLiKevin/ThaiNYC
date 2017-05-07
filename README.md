@@ -1,3 +1,6 @@
+# Demo
+[Link](https://quiet-anchorage-87455.herokuapp.com/)
+
 # Requirements
 
 Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.socrata.com/api/views/xx67-kt59/rows.csv?accessType=DOWNLOAD) complete the following:
@@ -6,6 +9,10 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 - Create a web front end to display the results.
 
 # Solution
+
+## ETL Script
+
+[Source](/restaurants/etl.py)
 
 ## SQL statement for the top 10 Thai restaurants.
 
@@ -79,18 +86,28 @@ RECORD DATE - NOT USED
 
 # Web Application
 
+## Running the ETL
+
+```bash
+python manage.py run_etl
+```
+
+## Deploying to Heroku
+
+- Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
+- Make this repo the current directory.
+- `heroku create`
+- `git push heroku master`
+- `heroku run python manage.py migrate`
+- `heroku run python manage.py createsuperuser`
+
 ## Running tests
 
 ```bash
 python manage.py test
 ```
 
-## Deploying to Heroku
-
-- Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
-- `heroku create`
-- `git push heroku master`
-
 # TODO
 
 - Run through the [Django production checklist](https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/) and ensure the application is production ready.
+- Make the load portion of the ETL atomic.

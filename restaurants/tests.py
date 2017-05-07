@@ -6,7 +6,9 @@ from datetime import datetime
 from django.test import TestCase
 
 from restaurants.etl import extract_restaurant_data, extract_inspection_data, extract_grade_data, \
-    transform_restaurant_data, transform_inspection_data, transform_grade_data, TransformException
+    transform_restaurant_data, transform_inspection_data, transform_grade_data, TransformException, \
+    load_restaurant_data, load_inspection_data, load_grade_data
+from restaurants.models import Restaurant, Inspection, Grade
 
 
 class ExtractTestCases(TestCase):
@@ -16,11 +18,11 @@ class ExtractTestCases(TestCase):
         self.critical = "Not Critical"
         self.restaurant_name = "LEE'S VILLA CHINESE RESTAURANT"
         self.inspection_date = "10/28/2015"
-        self.cuisine = "Chinese"
+        self.cuisine = "Thai"
         self.zip_code = "11201"
         self.violation_code = "10B"
         self.inspection_type = "Cycle Inspection / Re-inspection"
-        self.phone = "7188551818"
+        self.phone_number = "7188551818"
         self.street_name = "LAWRENCE STREET"
         self.registration_number = "40388386"
         self.grade = "A"
@@ -38,7 +40,7 @@ class ExtractTestCases(TestCase):
             "VIOLATION CODE": self.violation_code,
             "INSPECTION TYPE": self.inspection_type,
             "BORO": self.borough,
-            "PHONE": self.phone,
+            "PHONE": self.phone_number,
             "RECORD DATE": "05/06/2017",
             "STREET": self.street_name,
             "CAMIS": self.registration_number,
@@ -69,7 +71,7 @@ class ExtractRestaurantTestCases(ExtractTestCases):
 
     def test_phone_number_is_extracted(self):
         restaurant_data = extract_restaurant_data(self.csv_obj)
-        self.assertEqual(restaurant_data["phone"], self.phone)
+        self.assertEqual(restaurant_data["phone_number"], self.phone_number)
 
     def test_registration_number_is_extracted(self):
         restaurant_data = extract_restaurant_data(self.csv_obj)
@@ -133,6 +135,14 @@ class TransformTestCases(ExtractTestCases):
 
 
 class TransformRestaurantTestCases(TransformTestCases):
+    def test_raises_transform_exception_for_non_Thai_restaurant(self):
+        self.restaurant_data["cuisine"] = "Chinese"
+        self.assertRaises(TransformException, transform_restaurant_data, self.restaurant_data)
+
+    def test_raises_transform_exception_for_empty_name(self):
+        self.restaurant_data["name"] = ""
+        self.assertRaises(TransformException, transform_restaurant_data, self.restaurant_data)
+
     def test_transform_removes_building_number(self):
         transform_restaurant_data(self.restaurant_data)
         self.assertIsNone(self.restaurant_data.get("building_number"))
@@ -141,9 +151,9 @@ class TransformRestaurantTestCases(TransformTestCases):
         transform_restaurant_data(self.restaurant_data)
         self.assertIsNone(self.restaurant_data.get("street_name"))
 
-    def test_transform_adds_street(self):
+    def test_transform_adds_street_address(self):
         transform_restaurant_data(self.restaurant_data)
-        self.assertEqual(self.restaurant_data["street"], "{} {}".format(self.building_number, self.street_name))
+        self.assertEqual(self.restaurant_data["street_address"], "{} {}".format(self.building_number, self.street_name))
 
     def test_transform_borough_to_lowercase(self):
         transform_restaurant_data(self.restaurant_data)
@@ -158,13 +168,13 @@ class TransformRestaurantTestCases(TransformTestCases):
         self.assertRaises(TransformException, transform_restaurant_data, self.restaurant_data)
 
     def test_transform_phone_number_to_integer(self):
-        self.restaurant_data["phone"] = "__________"
+        self.restaurant_data["phone_number"] = "__________"
         transform_restaurant_data(self.restaurant_data)
-        self.assertIsNone(self.restaurant_data.get("phone"))
+        self.assertIsNone(self.restaurant_data.get("phone_number"))
 
     def test_transform_invalid_phone_number_to_none(self):
         transform_restaurant_data(self.restaurant_data)
-        self.assertEquals(self.restaurant_data.get("phone"), int(self.phone))
+        self.assertEquals(self.restaurant_data.get("phone_number"), int(self.phone_number))
 
     def test_transform_registration_number_to_integer(self):
         transform_restaurant_data(self.restaurant_data)
@@ -199,6 +209,10 @@ class TransformInspectionTestCases(TransformTestCases):
         self.inspection_data["score"] = ""
         transform_inspection_data(self.inspection_data)
         self.assertIsNone(self.inspection_data.get("score"))
+
+    def test_raises_transform_exception_for_empty_check_type(self):
+        self.inspection_data["check_type"] = ""
+        self.assertRaises(TransformException, transform_inspection_data, self.inspection_data)
 
 
 class TransformGradeTestCases(TransformTestCases):
@@ -250,3 +264,52 @@ class LoadTestCases(TransformTestCases):
         transform_restaurant_data(self.restaurant_data)
         transform_inspection_data(self.inspection_data)
         transform_grade_data(self.grade_data)
+
+    def tearDown(self):
+        Restaurant.objects.all().delete()
+
+
+class LoadRestaurantTestCases(LoadTestCases):
+    def test_load_returns_restaurant_object(self):
+        restaurant = load_restaurant_data(self.restaurant_data)
+        self.assertIsInstance(restaurant, Restaurant)
+
+    def test_load_saves_data(self):
+        restaurant = load_restaurant_data(self.restaurant_data)
+        self.assertIsNotNone(restaurant.pk)
+
+    def test_updates_restaurant_object_if_registration_number_already_exists(self):
+        new_restaurant_name = "New Restaurant Name"
+        restaurant1 = load_restaurant_data(self.restaurant_data)
+        self.restaurant_data["name"] = new_restaurant_name
+        restaurant2 = load_restaurant_data(self.restaurant_data)
+        self.assertEqual(restaurant1.pk, restaurant2.pk)
+        self.assertEqual(restaurant2.name, new_restaurant_name)
+
+
+class LoadInspectionTestCases(LoadTestCases):
+    def setUp(self):
+        super(LoadInspectionTestCases, self).setUp()
+        self.restaurant = load_restaurant_data(self.restaurant_data)
+
+    def test_load_returns_inspection_object(self):
+        inspection = load_inspection_data(self.restaurant, self.inspection_data)
+        self.assertIsInstance(inspection, Inspection)
+
+    def test_load_saves_data(self):
+        inspection = load_inspection_data(self.restaurant, self.inspection_data)
+        self.assertIsNotNone(inspection.pk)
+
+
+class LoadGradeTestCases(LoadTestCases):
+    def setUp(self):
+        super(LoadGradeTestCases, self).setUp()
+        self.restaurant = load_restaurant_data(self.restaurant_data)
+
+    def test_load_returns_grade_object(self):
+        grade = load_grade_data(self.restaurant, self.grade_data)
+        self.assertIsInstance(grade, Grade)
+
+    def test_load_saves_data(self):
+        grade = load_grade_data(self.restaurant, self.grade_data)
+        self.assertIsNotNone(grade.pk)

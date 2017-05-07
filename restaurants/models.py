@@ -17,11 +17,11 @@ GRADES = (
     (1, "A"),
     (2, "B"),
     (3, "C"),
-    (26, "Z")
+    (26, "Z"),
 )
 
 
-class Restaurants(Model):
+class Restaurant(Model):
     borough = CharField(max_length=13, choices=BOROUGHS)
     cuisine = CharField(max_length=255)
     name = CharField(max_length=255)
@@ -30,20 +30,29 @@ class Restaurants(Model):
     street_address = CharField(max_length=255)
     zip_code = PositiveSmallIntegerField()
 
+    def __unicode__(self):
+        return self.name
+
 
 class Inspection(Model):
     action = CharField(max_length=255)
     check_type = CharField(max_length=255)
     critical = BooleanField(default=False)
     date = DateField()
-    restaurant = ForeignKey(to=Restaurants)
+    restaurant = ForeignKey(to=Restaurant)
     score = SmallIntegerField(blank=True, null=True)
     violation_code = CharField(max_length=3)
     violation_description = CharField(max_length=255)
 
+    def __unicode__(self):
+        return "{} {} {}".format(self.restaurant, self.date, self.score)
+
 
 class Grade(Model):
     date = DateField()
-    restaurant = ForeignKey(to=Restaurants)
+    restaurant = ForeignKey(to=Restaurant)
     score = IntegerField(choices=GRADES)
+
+    def __unicode__(self):
+        return "{} {} {}".format(self.restaurant, self.date, self.score)
 
