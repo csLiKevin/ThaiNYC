@@ -141,7 +141,6 @@ def load_grade_data(restaurant, transformed_data):
 
 def run():
     line_number = 1
-    invalid_rows = []
     # The data set is a big csv so we will have to stream it and process the rows one by one.
     with closing(requests.get(RESULT_SET_URL, stream=True)) as response:
         response.encoding = response.encoding or "utf-8"
@@ -173,7 +172,5 @@ def run():
                 print line_number, "Valid", restaurant.registration_number, restaurant.name
             else:
                 print line_number, "Invalid", restaurant.registration_number, restaurant.name
-                invalid_rows.append(line_number)
             # Setup.
             line_number += 1
-    print "Invalid Rows: {}".format(invalid_rows)

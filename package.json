@@ -1,0 +1,39 @@
+{
+  "name": "thai-nyc",
+  "version": "1.0.0",
+  "description": "Find the best Thai food in NYC",
+  "main": "thai_nyc/js/index.jsx",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --progress --colors --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/csLiKevin/ThaiNYC.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/csLiKevin/ThaiNYC/issues"
+  },
+  "homepage": "https://github.com/csLiKevin/ThaiNYC#readme",
+  "devDependencies": {
+    "antd": "^2.10.0",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-plugin-import": "^1.1.1",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-es2016-node5": "^1.1.2",
+    "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.1",
+    "immutable": "^3.8.1",
+    "prop-types": "^15.5.8",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
+    "react-redux": "^5.0.4",
+    "redux": "^3.6.0",
+    "style-loader": "^0.17.0",
+    "webpack": "^2.5.1"
+  }
+}

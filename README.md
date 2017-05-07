@@ -95,7 +95,9 @@ python manage.py run_etl
 ## Deploying to Heroku
 
 - Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
+- Install the latest version of [Node](https://nodejs.org/en/download/).
 - Make this repo the current directory.
+- `npm run build`
 - `heroku create`
 - `git push heroku master`
 - `heroku run python manage.py migrate`
