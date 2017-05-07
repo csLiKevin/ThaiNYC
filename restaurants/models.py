@@ -2,8 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db.models import Model, PositiveIntegerField, CharField, ForeignKey, IntegerField, SmallIntegerField, \
-    PositiveSmallIntegerField, DateField, BooleanField
-
+    PositiveSmallIntegerField, DateField, BooleanField, BigIntegerField
 
 BOROUGHS = (
     ("bronx", "BRONX"),
@@ -25,7 +24,7 @@ class Restaurant(Model):
     borough = CharField(max_length=13, choices=BOROUGHS)
     cuisine = CharField(max_length=255)
     name = CharField(max_length=255)
-    phone_number = PositiveIntegerField(blank=True, null=True)
+    phone_number = BigIntegerField(blank=True, null=True)
     registration_number = PositiveIntegerField(unique=True)
     street_address = CharField(max_length=255)
     zip_code = PositiveSmallIntegerField()
