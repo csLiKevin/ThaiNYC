@@ -25,7 +25,7 @@ export class InspectionTable extends React.Component {
                 title: "Critical",
                 dataIndex: "critical",
                 key: "critical",
-                render: (boolean) => String(boolean)
+                render: (boolean) => <div style={{backgroundColor: boolean ? "#FF8042" : "#00C49F", height: "16px", width: "16px"}}/>
             },
             {
                 title: "Violation Code",
@@ -40,7 +40,8 @@ export class InspectionTable extends React.Component {
             {
                 title: "Description",
                 dataIndex: "violation_description",
-                key: "violationDescription"
+                key: "violationDescription",
+                render: (description) => description.length > 150 ? description.substring(0, 150) + "..." : description
             }
         ];
     }

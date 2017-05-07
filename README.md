@@ -168,3 +168,4 @@ python manage.py test
 - Create an API for retrieving restaurant, inspection, and grade data.
 - Incorporate React-Router to allow direct linking to a particular filter.
 - Add views that dive into past inspections and grades.
+- Add search and sorting in the restaurant table.

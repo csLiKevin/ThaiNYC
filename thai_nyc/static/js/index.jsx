@@ -19,7 +19,7 @@ const store = createStore(reducer, initialState);
 const App = () => {
     return (
         <Provider store={store}>
-            <Page>Hello World</Page>
+            <Page/>
         </Provider>
     );
 };

@@ -54,7 +54,6 @@ export class RestaurantTable extends React.Component {
         );
     }
     render() {
-        console.log(this.props.restaurantData);
         return (
             <AntTable
                 columns={this.columns}
