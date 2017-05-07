@@ -1,9 +1,50 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from datetime import date
+from json import dumps
+
+from django.forms import model_to_dict
 from django.views.generic import TemplateView
+
+from restaurants.models import Restaurant
+
+
+def extended_serializer(obj):
+    if isinstance(obj, date):
+        return obj.isoformat()
+    raise TypeError("{} could not be serialized".format(obj))
+
+
+def calculate_weighted_grade(restaurant):
+    # A lower weighted grade indicates a more sanitary restaurant.
+    grade = restaurant.last_grade().score or 0
+    violations = restaurant.last_inspection().score or 0
+    # A restaurants grade is more important than the number of violations.
+    return grade * 1000 + violations
 
 
 class Home(TemplateView):
     template_name = "restaurants/home.html"
 
+    def get_context_data(self, **kwargs):
+        context_data = super(Home, self).get_context_data(**kwargs)
+        top_restaurants = Restaurant.objects.filter(
+            cuisine="Thai",
+            grade__score__lte=2
+        ).distinct()
+        top_restaurants = sorted(
+            top_restaurants,
+            key=calculate_weighted_grade
+        )
+        restaurant_list = []
+        for restaurant in top_restaurants:
+            grades = restaurant.grade_set.order_by("-date")
+            inspections = restaurant.inspection_set.order_by("-date")
+            restaurant_data = model_to_dict(restaurant)
+            restaurant_data["borough"] = restaurant.get_borough_display()
+            restaurant_data["grades"] = [model_to_dict(grade) for grade in grades]
+            restaurant_data["inspections"] = [model_to_dict(inspection) for inspection in inspections]
+            restaurant_list.append(restaurant_data)
+        context_data["restaurant_data"] = dumps(restaurant_list, default=extended_serializer)
+        return context_data

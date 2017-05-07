@@ -32,6 +32,12 @@ class Restaurant(Model):
     def __unicode__(self):
         return self.name
 
+    def last_inspection(self):
+        return self.inspection_set.latest("date")
+
+    def last_grade(self):
+        return self.grade_set.latest("date")
+
 
 class Inspection(Model):
     action = CharField(max_length=255)

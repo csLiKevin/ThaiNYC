@@ -10,6 +10,45 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 
 # Solution
 
+## Table Creation
+
+```mysql
+BEGIN;
+--
+-- Create model Grade
+--
+CREATE TABLE "restaurants_grade" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "date" date NOT NULL, "score" integer NOT NULL);
+--
+-- Create model Inspection
+--
+CREATE TABLE "restaurants_inspection" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "action" varchar(255) NOT NULL, "check_type" varchar(255) NOT NULL, "critical" bool NOT NULL, "date" date NOT NULL, "score" smallint NULL, "violation_code" varchar(3) NOT NULL,
+ "violation_description" text NOT NULL);
+--
+-- Create model Restaurant
+--
+CREATE TABLE "restaurants_restaurant" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "borough" varchar(13) NOT NULL, "cuisine" varchar(255) NOT NULL, "name" varchar(255) NOT NULL, "phone_number" bigint NULL, "registration_number" integer unsigned NOT NULL UNIQU
+E, "street_address" varchar(255) NOT NULL, "zip_code" smallint unsigned NOT NULL);
+--
+-- Add field restaurant to inspection
+--
+ALTER TABLE "restaurants_inspection" RENAME TO "restaurants_inspection__old";
+CREATE TABLE "restaurants_inspection" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "action" varchar(255) NOT NULL, "check_type" varchar(255) NOT NULL, "critical" bool NOT NULL, "date" date NOT NULL, "score" smallint NULL, "violation_code" varchar(3) NOT NULL,
+ "violation_description" text NOT NULL, "restaurant_id" integer NOT NULL REFERENCES "restaurants_restaurant" ("id"));
+INSERT INTO "restaurants_inspection" ("score", "restaurant_id", "violation_code", "date", "critical", "action", "violation_description", "id", "check_type") SELECT "score", NULL, "violation_code", "date", "critical", "action", "violation_description", "id", "check
+_type" FROM "restaurants_inspection__old";
+DROP TABLE "restaurants_inspection__old";
+CREATE INDEX "restaurants_inspection_restaurant_id_ef5882cc" ON "restaurants_inspection" ("restaurant_id");
+--
+-- Add field restaurant to grade
+--
+ALTER TABLE "restaurants_grade" RENAME TO "restaurants_grade__old";
+CREATE TABLE "restaurants_grade" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "date" date NOT NULL, "score" integer NOT NULL, "restaurant_id" integer NOT NULL REFERENCES "restaurants_restaurant" ("id"));
+INSERT INTO "restaurants_grade" ("date", "restaurant_id", "score", "id") SELECT "date", NULL, "score", "id" FROM "restaurants_grade__old";
+DROP TABLE "restaurants_grade__old";
+CREATE INDEX "restaurants_grade_restaurant_id_37d19abe" ON "restaurants_grade" ("restaurant_id");
+COMMIT;
+```
+
 ## ETL Script
 
 [Source](/restaurants/etl.py)
@@ -17,18 +56,19 @@ Using [DOHMH New York City Restaurant Inspection Results](https://nycopendata.so
 ## SQL statement for the top 10 Thai restaurants.
 
 ```mysql
-SELECT "restaurants_restaurant"."borough", "restaurants_restaurant"."name", "restaurants_restaurant"."phone_number", "restaurants_restaurant"."registration_number", "restaurants_restaurant"."street_address", "restaurants_restaurant"."zip_code"
+SELECT DISTINCT "restaurants_restaurant"."borough", "restaurants_restaurant"."name", "restaurants_restaurant"."phone_number", "restaurants_restaurant"."registration_number", "restaurants_restaurant"."street_address", "restaurants_restaurant"."zip_code", "restaurants_grade"."score"
 FROM "restaurants_restaurant"
 INNER JOIN "restaurants_grade" ON ("restaurants_restaurant"."id" = "restaurants_grade"."restaurant_id")
-LEFT OUTER JOIN "restaurants_inspection" ON ("restaurants_restaurant"."id" = "restaurants_inspection"."restaurant_id")
 WHERE ("restaurants_restaurant"."cuisine" = Thai AND "restaurants_grade"."score" <= 2)
-ORDER BY "restaurants_grade"."score" ASC, "restaurants_inspection"."score" ASC
-LIMIT 10
+ORDER BY "restaurants_grade"."score"
+ASC LIMIT 10
 ```
 
 ## ETL Schema justification
 
 ### Restaurant
+
+This model is needed because we need a representation for each restaurant.
 
 - `registration_number` - Each restaurant gets a unique registration number assigned to them by the city.
 - `name` - All restaurants should have a name that they display on their storefront.
@@ -41,6 +81,8 @@ LIMIT 10
 
 ### Inspection
 
+This model is created because there can be multiple inspections on different dates per restaurant.
+
 - `restaurant` - The restaurant this inspection belongs to.
 - `check_type` - The type of inspection that was performed.
 - `score` - A number representing how many health violations a restaurant has.
@@ -52,6 +94,8 @@ LIMIT 10
 
 
 ### Grade
+
+This model is created because not every inspection has a grade and grades have their own dates. There can be history of grades for each restaurant.
 
 - `restaurant` - The restaurant this inspection belongs to.
 - `score` - The letter grade.
@@ -121,3 +165,6 @@ python manage.py test
 
 - Run through the [Django production checklist](https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/) and ensure the application is production ready.
 - Make the load portion of the ETL atomic.
+- Create an API for retrieving restaurant, inspection, and grade data.
+- Incorporate React-Router to allow direct linking to a particular filter.
+- Add views that dive into past inspections and grades.
