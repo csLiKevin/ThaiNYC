@@ -24,7 +24,7 @@ module.exports = {
                                 "transform-object-rest-spread"
                             ],
                             presets: [
-                                "es2016-node5",
+                                "es2015",
                                 "react"
                             ]
                         }

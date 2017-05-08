@@ -4,7 +4,7 @@
   "description": "Find the best Thai food in NYC",
   "main": "thai_nyc/js/index.jsx",
   "scripts": {
-    "build": "webpack",
+    "build": "webpack -p",
     "watch": "webpack --progress --colors --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,7 +24,7 @@
     "babel-loader": "^7.0.0",
     "babel-plugin-import": "^1.1.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
-    "babel-preset-es2016-node5": "^1.1.2",
+    "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "css-loader": "^0.28.1",
     "immutable": "^3.8.1",
