@@ -17,9 +17,10 @@ def extended_serializer(obj):
 
 
 def calculate_weighted_grade(restaurant):
-    # A lower weighted grade indicates a more sanitary restaurant.
-    grade = restaurant.last_grade().score or 0
-    violations = restaurant.last_inspection().score or 0
+    # A lower weighted grade indicates a more sanitary restaurant. The value is based on the most recent grade and
+    # inspection date.
+    grade = restaurant["grades"][0]["score"] or 0
+    violations = restaurant["inspections"][0]["score"] or 0
     # A restaurants grade is more important than the number of violations.
     return grade * 1000 + violations
 
@@ -33,10 +34,6 @@ class Home(TemplateView):
             cuisine="Thai",
             grade__score__lte=2
         ).distinct()
-        top_restaurants = sorted(
-            top_restaurants,
-            key=calculate_weighted_grade
-        )
         restaurant_list = []
         for restaurant in top_restaurants:
             grades = restaurant.grade_set.order_by("-date")
@@ -46,5 +43,6 @@ class Home(TemplateView):
             restaurant_data["grades"] = [model_to_dict(grade) for grade in grades]
             restaurant_data["inspections"] = [model_to_dict(inspection) for inspection in inspections]
             restaurant_list.append(restaurant_data)
+        restaurant_list = sorted(restaurant_list, key=calculate_weighted_grade)
         context_data["restaurant_data"] = dumps(restaurant_list, default=extended_serializer)
         return context_data
