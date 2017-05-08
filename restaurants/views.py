@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from datetime import date
 from json import dumps
 
+from django.db.models import QuerySet
 from django.forms import model_to_dict
 from django.views.generic import TemplateView
 
@@ -13,6 +14,8 @@ from restaurants.models import Restaurant
 def extended_serializer(obj):
     if isinstance(obj, date):
         return obj.isoformat()
+    elif isinstance(obj, QuerySet):
+        return list(obj)
     raise TypeError("{} could not be serialized".format(obj))
 
 
@@ -36,13 +39,11 @@ class Home(TemplateView):
         ).distinct()
         restaurant_list = []
         for restaurant in top_restaurants:
-            grades = restaurant.grade_set.order_by("-date")
-            inspections = restaurant.inspection_set.order_by("-date")
             restaurant_data = model_to_dict(restaurant)
             restaurant_data["borough"] = restaurant.get_borough_display()
-            restaurant_data["grades"] = [model_to_dict(grade) for grade in grades]
-            restaurant_data["inspections"] = [model_to_dict(inspection) for inspection in inspections]
+            restaurant_data["grades"] = restaurant.grade_set.order_by("-date").values()
+            restaurant_data["inspections"] = restaurant.inspection_set.order_by("-date").values()
             restaurant_list.append(restaurant_data)
-        restaurant_list = sorted(restaurant_list, key=calculate_weighted_grade)
+        restaurant_list.sort(key=calculate_weighted_grade)
         context_data["restaurant_data"] = dumps(restaurant_list, default=extended_serializer)
         return context_data
